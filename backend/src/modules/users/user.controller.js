@@ -10,6 +10,15 @@ class UserController {
         }
     }
 
+    async getAllUsers(req, res, next) {
+        try {
+            const users = await userService.getAllUsers();
+            res.json({ success: true, data: users });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async updateProfile(req, res, next) {
         try {
             const { name, email } = req.body;

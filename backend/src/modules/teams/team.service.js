@@ -20,7 +20,15 @@ class TeamService {
             throw new ApiError(404, 'Team not found');
         }
 
-        return team;
+        // Format the response to match frontend expectations
+        return {
+            _id: team._id,
+            name: team.name,
+            description: team.description,
+            members: team.memberIds, // Use 'members' instead of 'memberIds'
+            createdAt: team.createdAt,
+            updatedAt: team.updatedAt
+        };
     }
 
     async create(data) {
@@ -95,7 +103,11 @@ class TeamService {
             await user.save();
         }
 
-        return team;
+        // Return populated team
+        const populatedTeam = await MaintenanceTeam.findById(teamId)
+            .populate('memberIds', 'name email role avatarUrl');
+
+        return populatedTeam;
     }
 
     async removeMember(teamId, userId) {
@@ -119,7 +131,11 @@ class TeamService {
         user.teamIds = user.teamIds.filter(id => id.toString() !== teamId.toString());
         await user.save();
 
-        return team;
+        // Return populated team
+        const populatedTeam = await MaintenanceTeam.findById(teamId)
+            .populate('memberIds', 'name email role avatarUrl');
+
+        return populatedTeam;
     }
 
     async delete(id) {

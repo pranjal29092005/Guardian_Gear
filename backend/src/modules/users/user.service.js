@@ -75,6 +75,15 @@ class UserService {
         };
     }
 
+    async getAllUsers() {
+        const users = await User.find()
+            .select('name email role teamIds')
+            .populate('teamIds', 'name')
+            .sort({ name: 1 });
+
+        return users;
+    }
+
     async getTechniciansWithStats() {
         const MaintenanceRequest = require('../requests/request.model');
         const { USER_ROLES, REQUEST_STAGES } = require('../../utils/constants');
