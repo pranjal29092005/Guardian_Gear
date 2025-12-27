@@ -1,0 +1,72 @@
+{
+    "version": "1.0",
+    "project_name": "GearGuard – Ultimate Maintenance Tracker",
+    "description": "Hackathon-grade maintenance management system with strict domain logic and Excalidraw-aligned flows.",
+    "execution_mode": "sequential",
+    "strict_mode": true,
+  
+    "context_files": [
+      "cursor-prompts/00_project_context.md",
+      "cursor-prompts/01_domain_modeling.md",
+      "cursor-prompts/02_backend_architecture.md",
+      "cursor-prompts/03_backend_api_requests.md",
+      "cursor-prompts/04_frontend_architecture.md",
+      "cursor-prompts/05_kanban_calendar_logic.md",
+      "cursor-prompts/06_automation_and_smart_features.md",
+      "cursor-prompts/07_demo_readiness_and_polish.md"
+    ],
+  
+    "agents": [
+      {
+        "name": "domain_guard",
+        "role": "Validate domain models, enums, and relationships",
+        "must_follow": [
+          "01_domain_modeling.md"
+        ]
+      },
+      {
+        "name": "backend_architect",
+        "role": "Generate backend folder structure, models, services, controllers",
+        "must_follow": [
+          "02_backend_architecture.md",
+          "03_backend_api_requests.md"
+        ]
+      },
+      {
+        "name": "frontend_architect",
+        "role": "Generate frontend pages, components, routing",
+        "must_follow": [
+          "04_frontend_architecture.md"
+        ]
+      },
+      {
+        "name": "workflow_enforcer",
+        "role": "Enforce Kanban, Calendar, stage transitions, permissions",
+        "must_follow": [
+          "05_kanban_calendar_logic.md",
+          "06_automation_and_smart_features.md"
+        ]
+      },
+      {
+        "name": "demo_optimizer",
+        "role": "Seed data, demo polish, UX sanity",
+        "must_follow": [
+          "07_demo_readiness_and_polish.md"
+        ]
+      }
+    ],
+  
+    "global_rules": {
+      "no_hallucination": true,
+      "no_extra_features": true,
+      "no_schema_changes": true,
+      "backend_is_source_of_truth": true,
+      "frontend_cannot_override_backend_rules": true
+    },
+  
+    "failure_policy": {
+      "on_conflict": "stop_and_explain",
+      "on_missing_context": "request_file_reference"
+    }
+  }
+  
