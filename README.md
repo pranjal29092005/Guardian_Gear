@@ -902,7 +902,6 @@ copies or substantial portions of the Software.
 [![GitHub forks](https://img.shields.io/github/forks/pranjal29092005/Guardian_Gear?style=social)](https://github.com/pranjal29092005/Guardian_Gear/fork)
 [![GitHub watchers](https://img.shields.io/github/watchers/pranjal29092005/Guardian_Gear?style=social)](https://github.com/pranjal29092005/Guardian_Gear)
 
-**Made with ❤️ by the Guardian Gear Team**
-
+***Made with ❤️ by the Guardian Gear Team***
 
 </div>
