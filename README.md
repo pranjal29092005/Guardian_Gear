@@ -131,6 +131,18 @@ Guardian Gear delivers:
 
 ## 🏗️ Architecture & Tech Stack
 
+### 📊 System Architecture Flowchart
+
+<div align="center">
+
+![Guardian Gear System Architecture](https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/16e6ad41f897b7e60ff9cb27f838c8c7/8971857b-1285-4788-b8a4-1fd1fb5c47be/fec7df2d.png)
+
+*Complete system architecture showing the flow between frontend, backend, and database layers*
+
+</div>
+
+---
+
 ### 🎨 **Frontend Excellence**
 
 ```
