@@ -1,15 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { 
+    Plus, 
+    User, 
+    AlertTriangle, 
+    CheckCircle, 
+    XCircle, 
+    Edit3, 
+    Clock, 
+    Package,
+    Wrench,
+    GripVertical
+} from 'lucide-react';
 import { requestAPI } from '../api/requests';
 import { useAuth } from '../contexts/AuthContext';
 import CreateRequestModal from '../components/CreateRequestModal';
 import RequestDetailModal from '../components/RequestDetailModal';
 import AssignTechnicianModal from '../components/AssignTechnicianModal';
 import EditRequestModal from '../components/EditRequestModal';
-import { WarningIcon, UserIcon, EditIcon } from '../components/Icons';
+import { Button } from '../components/ui/Button';
+import { Badge, CountBadge } from '../components/ui/Badge';
+import { LoadingScreen } from '../components/ui/Loading';
+import { cn } from '../utils/cn';
 
 const STAGES = {
     NEW: 'NEW',
@@ -18,8 +34,51 @@ const STAGES = {
     SCRAP: 'SCRAP'
 };
 
+const STAGE_CONFIG = {
+    NEW: {
+        label: 'New Requests',
+        icon: AlertTriangle,
+        color: 'from-blue-500 to-cyan-500',
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/30',
+        glowColor: 'shadow-blue-500/20'
+    },
+    IN_PROGRESS: {
+        label: 'In Progress',
+        icon: Wrench,
+        color: 'from-yellow-500 to-orange-500',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500/30',
+        glowColor: 'shadow-yellow-500/20'
+    },
+    REPAIRED: {
+        label: 'Completed',
+        icon: CheckCircle,
+        color: 'from-green-500 to-emerald-500',
+        bgColor: 'bg-green-500/10',
+        borderColor: 'border-green-500/30',
+        glowColor: 'shadow-green-500/20'
+    },
+    SCRAP: {
+        label: 'Scrapped',
+        icon: XCircle,
+        color: 'from-red-500 to-rose-500',
+        bgColor: 'bg-red-500/10',
+        borderColor: 'border-red-500/30',
+        glowColor: 'shadow-red-500/20'
+    }
+};
+
 // Sortable Request Card Component
-const SortableRequestCard = ({ request, canModifyRequest, onAssign, onStageChange, isManager, onOpenAssignModal, onOpenEditModal }) => {
+const SortableRequestCard = ({ 
+    request, 
+    canModifyRequest, 
+    onAssign, 
+    onStageChange, 
+    isManager, 
+    onOpenAssignModal, 
+    onOpenEditModal 
+}) => {
     const {
         attributes,
         listeners,
@@ -35,99 +94,205 @@ const SortableRequestCard = ({ request, canModifyRequest, onAssign, onStageChang
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
     };
 
+    const isDraggable = canModifyRequest && request.stage !== STAGES.REPAIRED && request.stage !== STAGES.SCRAP;
+
     return (
-        <div
+        <motion.div
             ref={setNodeRef}
             style={style}
-            {...attributes}
-            {...listeners}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
+            whileHover={!isDragging && isDraggable ? { y: -4 } : {}}
             onClick={() => {
                 if (!isDragging && request.onClick) {
                     request.onClick(request);
                 }
             }}
-            className={`bg-white rounded-lg p-4 shadow-sm border-l-4 cursor-move ${request.isOverdue ? 'border-red-500' : 'border-blue-500'
-                } ${isDragging ? 'shadow-lg' : ''}`}
+            className={cn(
+                "group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10",
+                "hover:border-white/20 transition-all duration-300",
+                isDraggable && "cursor-move",
+                request.isOverdue && "border-red-500/50 shadow-red-500/20",
+                isDragging && "shadow-2xl scale-105 ring-2 ring-primary-500/50"
+            )}
         >
-            <h4 className="font-medium text-gray-900 mb-2">{request.subject}</h4>
-
-            <p className="text-sm text-gray-600 mb-2">
-                {request.equipmentId?.name}
-            </p>
-
-            {request.assignedTechnicianId && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
-                    <UserIcon className="w-4 h-4" />
-                    <span>{request.assignedTechnicianId.name}</span>
+            {/* Drag Handle */}
+            {isDraggable && (
+                <div 
+                    {...attributes} 
+                    {...listeners}
+                    className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                >
+                    <GripVertical className="w-5 h-5 text-gray-400" />
                 </div>
             )}
 
-            {request.isOverdue && (
-                <div className="flex items-center gap-1 text-xs text-red-600 font-medium mb-2">
-                    <WarningIcon className="w-4 h-4" />
-                    <span>Overdue</span>
-                </div>
-            )}
+            <div className={cn("space-y-3", isDraggable && "ml-8")}>
+                {/* Title */}
+                <h4 className="font-semibold text-white text-sm leading-tight pr-2">
+                    {request.subject}
+                </h4>
 
-            {canModifyRequest && (
-                <div className="mt-3 space-y-2">
-                    {isManager && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onOpenEditModal(request);
-                            }}
-                            className="w-full text-xs px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition-colors flex items-center justify-center gap-1"
-                        >
-                            <EditIcon className="w-3 h-3" />
-                            Edit
-                        </button>
-                    )}
+                {/* Equipment */}
+                {request.equipmentId?.name && (
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <Package className="w-4 h-4" />
+                        <span className="truncate">{request.equipmentId.name}</span>
+                    </div>
+                )}
 
-                    {!request.assignedTechnicianId && request.stage === STAGES.NEW && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (isManager) {
-                                    onOpenAssignModal(request);
-                                } else {
-                                    onAssign(request._id);
-                                }
-                            }}
-                            className="w-full text-xs px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition-colors"
-                        >
-                            {isManager ? 'Assign' : 'Assign to Me'}
-                        </button>
-                    )}
+                {/* Assigned Technician */}
+                {request.assignedTechnicianId && (
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary-500/20">
+                            <User className="w-3.5 h-3.5 text-primary-400" />
+                        </div>
+                        <span className="text-xs text-gray-300 truncate">
+                            {request.assignedTechnicianId.name}
+                        </span>
+                    </div>
+                )}
 
-                    {request.stage === STAGES.IN_PROGRESS && (
-                        <>
+                {/* Overdue Warning */}
+                {request.isOverdue && (
+                    <div className="flex items-center gap-2 px-2 py-1.5 bg-red-500/20 rounded-lg border border-red-500/30">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                        <span className="text-xs text-red-400 font-medium">Overdue</span>
+                    </div>
+                )}
+
+                {/* Action Buttons */}
+                {canModifyRequest && (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
+                        {isManager && (
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onStageChange(request._id, STAGES.REPAIRED);
+                                    onOpenEditModal(request);
                                 }}
-                                className="w-full text-xs px-2 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded transition-colors"
+                                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
                             >
-                                Complete
+                                <Edit3 className="w-3.5 h-3.5" />
+                                Edit
                             </button>
+                        )}
+
+                        {!request.assignedTechnicianId && request.stage === STAGES.NEW && (
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onStageChange(request._id, STAGES.SCRAP);
+                                    if (isManager) {
+                                        onOpenAssignModal(request);
+                                    } else {
+                                        onAssign(request._id);
+                                    }
                                 }}
-                                className="w-full text-xs px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded transition-colors"
+                                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors"
                             >
-                                Scrap
+                                <User className="w-3.5 h-3.5" />
+                                {isManager ? 'Assign' : 'Assign to Me'}
                             </button>
-                        </>
-                    )}
+                        )}
+
+                        {request.stage === STAGES.IN_PROGRESS && (
+                            <>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onStageChange(request._id, STAGES.REPAIRED);
+                                    }}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors"
+                                >
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    Complete
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onStageChange(request._id, STAGES.SCRAP);
+                                    }}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors"
+                                >
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    Scrap
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+// Droppable Column Component
+const DroppableColumn = ({ stage, requests, children }) => {
+    const { setNodeRef, isOver } = useDroppable({ id: stage });
+    const config = STAGE_CONFIG[stage];
+    const Icon = config.icon;
+
+    return (
+        <motion.div
+            ref={setNodeRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+                "relative rounded-2xl p-4 min-h-[600px] backdrop-blur-sm",
+                "bg-gradient-to-b from-white/5 to-transparent border border-white/10",
+                "transition-all duration-300",
+                isOver && "ring-2 ring-primary-500/50 shadow-glow scale-[1.02]"
+            )}
+        >
+            {/* Column Header */}
+            <div className="mb-4 pb-4 border-b border-white/10">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "p-2 rounded-xl bg-gradient-to-br",
+                            config.color,
+                            "shadow-lg"
+                        )}>
+                            <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="font-bold text-white text-lg">
+                            {config.label}
+                        </h3>
+                    </div>
+                    <CountBadge 
+                        count={requests?.length || 0} 
+                        variant={stage === 'NEW' ? 'primary' : 'secondary'}
+                    />
+                </div>
+            </div>
+
+            {/* Cards Container */}
+            <div className="space-y-3">
+                {children}
+            </div>
+
+            {/* Empty State */}
+            {(!requests || requests.length === 0) && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center py-12">
+                        <Icon className="w-12 h-12 text-gray-600 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm text-gray-500">
+                            {isOver ? 'Drop here' : 'No requests'}
+                        </p>
+                    </div>
                 </div>
             )}
-        </div>
+
+            {/* Drop Indicator */}
+            {isOver && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 bg-primary-500/10 rounded-2xl border-2 border-dashed border-primary-500/50 pointer-events-none"
+                />
+            )}
+        </motion.div>
     );
 };
 
@@ -164,14 +329,11 @@ const KanbanBoard = () => {
 
     const fetchKanbanData = async () => {
         try {
-            console.log('[KanbanBoard] Fetching kanban data, equipmentId:', equipmentId);
             setLoading(true);
             const data = await requestAPI.getKanban(equipmentId);
-            console.log('[KanbanBoard] Received kanban data:', data);
 
             // If filtered by equipment, convert array to kanban structure
             if (equipmentId && Array.isArray(data)) {
-                console.log('[KanbanBoard] Grouping equipment-filtered data');
                 const grouped = {
                     NEW: [],
                     IN_PROGRESS: [],
@@ -183,17 +345,12 @@ const KanbanBoard = () => {
                         grouped[req.stage].push(req);
                     }
                 });
-                console.log('[KanbanBoard] Grouped data:', grouped);
                 setKanbanData(grouped);
             } else {
-                console.log('[KanbanBoard] Setting kanban data directly:', data);
                 setKanbanData(data);
             }
-
-            console.log('[KanbanBoard] Final kanban data state:', data);
         } catch (error) {
-            console.error('[KanbanBoard] Failed to fetch kanban data:', error);
-            console.error('[KanbanBoard] Error response:', error.response?.data);
+            console.error('Failed to fetch kanban data:', error);
         } finally {
             setLoading(false);
         }
@@ -227,12 +384,11 @@ const KanbanBoard = () => {
 
         if (!draggedRequest) return;
 
-        // Determine target stage (overId could be a stage name or another request)
+        // Determine target stage
         let toStage = null;
         if (Object.keys(STAGES).includes(overId)) {
             toStage = overId;
         } else {
-            // Find which stage the target request is in
             for (const [stage, requests] of Object.entries(kanbanData)) {
                 if (requests.find(r => r._id === overId)) {
                     toStage = stage;
@@ -252,38 +408,6 @@ const KanbanBoard = () => {
         };
 
         if (!validTransitions[fromStage].includes(toStage)) {
-            // Invalid transition - silently ignore
-            return;
-        }
-
-        // Handle REPAIRED - duration will be calculated automatically on backend
-        if (toStage === STAGES.REPAIRED) {
-            // Optimistic update
-            const newKanbanData = { ...kanbanData };
-            newKanbanData[fromStage] = newKanbanData[fromStage].filter(r => r._id !== activeId);
-            newKanbanData[toStage] = [...newKanbanData[toStage], draggedRequest];
-            setKanbanData(newKanbanData);
-
-            // Update backend - duration will be auto-calculated
-            try {
-                await requestAPI.updateStage(activeId, toStage);
-            } catch (error) {
-                console.error('Failed to update stage:', error);
-                // Revert on error
-                fetchKanbanData();
-            }
-            return;
-        }
-
-        if (toStage === STAGES.SCRAP) {
-            // Scrap directly when dragged
-            try {
-                await requestAPI.scrap(activeId);
-                fetchKanbanData();
-            } catch (error) {
-                console.error('Failed to scrap request:', error);
-                fetchKanbanData(); // Refresh to revert UI
-            }
             return;
         }
 
@@ -295,10 +419,15 @@ const KanbanBoard = () => {
 
         // Update backend
         try {
-            await requestAPI.updateStage(activeId, toStage);
+            if (toStage === STAGES.REPAIRED) {
+                await requestAPI.complete(activeId, 0);
+            } else if (toStage === STAGES.SCRAP) {
+                await requestAPI.scrap(activeId);
+            } else {
+                await requestAPI.updateStage(activeId, toStage);
+            }
         } catch (error) {
             console.error('Failed to update stage:', error);
-            // Revert on error
             fetchKanbanData();
         }
     };
@@ -309,31 +438,29 @@ const KanbanBoard = () => {
             fetchKanbanData();
         } catch (error) {
             console.error('Failed to assign request:', error);
-            fetchKanbanData(); // Refresh to revert UI
+            fetchKanbanData();
         }
     };
 
     const handleStageChange = async (requestId, newStage) => {
         if (newStage === STAGES.REPAIRED) {
-            // Complete with auto-calculated duration
             try {
-                await requestAPI.complete(requestId, 0); // 0 will trigger auto-calculation on backend
+                await requestAPI.complete(requestId, 0);
                 fetchKanbanData();
             } catch (error) {
                 console.error('Failed to complete request:', error);
-                fetchKanbanData(); // Refresh to revert UI
+                fetchKanbanData();
             }
             return;
         }
 
         if (newStage === STAGES.SCRAP) {
-            // Scrap directly without confirmation
             try {
                 await requestAPI.scrap(requestId);
                 fetchKanbanData();
             } catch (error) {
                 console.error('Failed to scrap request:', error);
-                fetchKanbanData(); // Refresh to revert UI
+                fetchKanbanData();
             }
             return;
         }
@@ -343,14 +470,15 @@ const KanbanBoard = () => {
             fetchKanbanData();
         } catch (error) {
             console.error('Failed to update stage:', error);
-            fetchKanbanData(); // Refresh to revert UI
+            fetchKanbanData();
         }
     };
 
     const canModifyRequest = hasRole(['TECHNICIAN', 'MANAGER']);
+    const isManager = hasRole(['MANAGER']);
 
     if (loading) {
-        return <div className="text-center py-12">Loading...</div>;
+        return <LoadingScreen message="Loading kanban board..." />;
     }
 
     return (
@@ -360,99 +488,100 @@ const KanbanBoard = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div>
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        {equipmentId ? 'Equipment Maintenance Requests' : 'Kanban Board'}
-                    </h1>
-                    <button
+            <div className="space-y-6">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between"
+                >
+                    <div>
+                        <h1 className="text-4xl font-bold text-white mb-2">
+                            {equipmentId ? 'Equipment Requests' : 'Kanban Board'}
+                        </h1>
+                        <p className="text-gray-400">
+                            Manage maintenance requests across workflow stages
+                        </p>
+                    </div>
+                    <Button
                         onClick={() => setShowCreateModal(true)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        icon={Plus}
+                        size="lg"
                     >
-                        + Create Request
-                    </button>
-                </div>
+                        Create Request
+                    </Button>
+                </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {Object.entries(STAGES).map(([key, stage]) => {
-                        const DroppableColumn = () => {
-                            const { setNodeRef, isOver } = useDroppable({
-                                id: stage
-                            });
-
-                            return (
-                                <div
-                                    ref={setNodeRef}
-                                    className={`bg-gray-100 rounded-lg p-4 min-h-[500px] ${isOver ? 'bg-gray-200 ring-2 ring-blue-500' : ''}`}
-                                >
-                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center justify-between">
-                                        <span>{stage.replace('_', ' ')}</span>
-                                        <span className="text-sm bg-gray-200 px-2 py-1 rounded">
-                                            {kanbanData[stage]?.length || 0}
-                                        </span>
-                                    </h3>
-
-                                    <SortableContext
-                                        items={kanbanData[stage]?.map(r => r._id) || []}
-                                        strategy={verticalListSortingStrategy}
-                                        id={stage}
-                                    >
-                                        <div className="space-y-3">
-                                            {kanbanData[stage]?.map((request) => (
-                                                <SortableRequestCard
-                                                    key={request._id}
-                                                    request={{
-                                                        ...request,
-                                                        onClick: (req) => {
-                                                            setSelectedRequest(req);
-                                                            setShowDetailModal(true);
-                                                        }
-                                                    }}
-                                                    canModifyRequest={canModifyRequest}
-                                                    isManager={hasRole(['MANAGER'])}
-                                                    onAssign={handleAssignToMe}
-                                                    onStageChange={handleStageChange}
-                                                    onOpenAssignModal={(req) => {
+                {/* Kanban Columns */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    {Object.entries(STAGES).map(([key, stage]) => (
+                        <DroppableColumn
+                            key={stage}
+                            stage={stage}
+                            requests={kanbanData[stage]}
+                        >
+                            <SortableContext
+                                items={kanbanData[stage]?.map(r => r._id) || []}
+                                strategy={verticalListSortingStrategy}
+                                id={stage}
+                            >
+                                <AnimatePresence>
+                                    {kanbanData[stage]?.map((request, index) => (
+                                        <motion.div
+                                            key={request._id}
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            transition={{ delay: index * 0.05 }}
+                                        >
+                                            <SortableRequestCard
+                                                request={{
+                                                    ...request,
+                                                    onClick: (req) => {
                                                         setSelectedRequest(req);
-                                                        setShowAssignModal(true);
-                                                    }}
-                                                    onOpenEditModal={(req) => {
-                                                        setSelectedRequest(req);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                />
-                                            ))}
-
-                                            {kanbanData[stage]?.length === 0 && (
-                                                <div className="text-center py-8 text-gray-400 text-sm">
-                                                    Drop cards here
-                                                </div>
-                                            )}
-                                        </div>
-                                    </SortableContext>
-                                </div>
-                            );
-                        };
-
-                        return <DroppableColumn key={stage} />;
-                    })}
+                                                        setShowDetailModal(true);
+                                                    }
+                                                }}
+                                                canModifyRequest={canModifyRequest}
+                                                isManager={isManager}
+                                                onAssign={handleAssignToMe}
+                                                onStageChange={handleStageChange}
+                                                onOpenAssignModal={(req) => {
+                                                    setSelectedRequest(req);
+                                                    setShowAssignModal(true);
+                                                }}
+                                                onOpenEditModal={(req) => {
+                                                    setSelectedRequest(req);
+                                                    setShowEditModal(true);
+                                                }}
+                                            />
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </SortableContext>
+                        </DroppableColumn>
+                    ))}
                 </div>
-
-                <CreateRequestModal
-                    isOpen={showCreateModal}
-                    onClose={() => setShowCreateModal(false)}
-                    onSuccess={fetchKanbanData}
-                />
-
             </div>
 
+            {/* Drag Overlay */}
             <DragOverlay>
                 {activeId ? (
-                    <div className="bg-white rounded-lg p-4 shadow-xl border-l-4 border-blue-500 opacity-90">
-                        Dragging...
+                    <div className="bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl p-4 shadow-2xl opacity-90">
+                        <div className="flex items-center gap-2 text-white font-medium">
+                            <GripVertical className="w-5 h-5" />
+                            <span>Moving request...</span>
+                        </div>
                     </div>
                 ) : null}
             </DragOverlay>
+
+            {/* Modals */}
+            <CreateRequestModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSuccess={fetchKanbanData}
+            />
 
             <RequestDetailModal
                 isOpen={showDetailModal}

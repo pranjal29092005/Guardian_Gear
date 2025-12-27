@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { equipmentAPI } from '../api/equipment';
 import { requestAPI } from '../api/requests';
 import { workcenterAPI } from '../api/workcenters';
@@ -205,28 +206,28 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-400 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-6 border-b border-gray-700">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Maintenance Requests</h2>
+                            <h2 className="text-2xl font-bold text-white">Maintenance Request</h2>
                             <div className="mt-2 flex items-center gap-2">
-                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">New</span>
-                                <span className="text-sm text-gray-600">{formData.subject || 'New Request'}</span>
+                                <span className="px-3 py-1 text-xs bg-primary-500/20 text-primary-400 rounded-lg border border-primary-500/30">New</span>
+                                <span className="text-sm text-gray-400">{formData.subject || 'New Request'}</span>
                             </div>
                         </div>
                         <div className="text-right">
                             <div className="text-xs text-gray-500 mb-1">Status Flow</div>
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                                <span>New Request</span>
-                                <span>&gt;</span>
-                                <span>In Progress</span>
-                                <span>&gt;</span>
-                                <span>Repaired</span>
-                                <span>&gt;</span>
-                                <span>Scrap</span>
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <span className="px-2 py-1 bg-white/5 rounded">New</span>
+                                <span>→</span>
+                                <span className="px-2 py-1 bg-white/5 rounded">In Progress</span>
+                                <span>→</span>
+                                <span className="px-2 py-1 bg-white/5 rounded">Repaired</span>
+                                <span>→</span>
+                                <span className="px-2 py-1 bg-white/5 rounded">Scrap</span>
                             </div>
                         </div>
                     </div>
@@ -234,8 +235,9 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
 
                 <form onSubmit={handleSubmit} className="p-6">
                     {error && (
-                        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded mb-4">
-                            {error}
+                        <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg mb-4 flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span>{error}</span>
                         </div>
                     )}
 
@@ -243,39 +245,39 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                         {/* Left Column */}
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Subject
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.subject}
                                     onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
+                                    className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg font-semibold text-white placeholder-gray-500 transition-all"
                                     required
-                                    placeholder="Test activity"
+                                    placeholder="Enter subject"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Created By
                                 </label>
                                 <input
                                     type="text"
                                     value={user?.name || ''}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                                    className="w-full px-4 py-3 bg-dark-500 border border-gray-700 rounded-lg text-gray-400"
                                     disabled
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Maintenance For
                                 </label>
                                 <select
                                     value={formData.maintenanceFor}
                                     onChange={(e) => handleMaintenanceForChange(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                     required
                                 >
                                     <option value="EQUIPMENT">Equipment</option>
@@ -285,13 +287,13 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
 
                             {formData.maintenanceFor === 'EQUIPMENT' ? (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Equipment
                                     </label>
                                     <select
                                         value={formData.equipmentId}
                                         onChange={(e) => handleEquipmentChange(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                         required={formData.maintenanceFor === 'EQUIPMENT'}
                                     >
                                         <option value="">Select Equipment</option>
@@ -304,13 +306,13 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Work Center
                                     </label>
                                     <select
                                         value={formData.workCenterId}
                                         onChange={(e) => handleWorkCenterChange(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                         required={formData.maintenanceFor === 'WORK_CENTER'}
                                     >
                                         <option value="">Select Work Center</option>
@@ -324,55 +326,55 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                             )}
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Category
                                 </label>
                                 <input
                                     type="text"
                                     value={selectedEquipment?.category || selectedWorkCenter?.name || ''}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                                    className="w-full px-4 py-3 bg-dark-500 border border-gray-700 rounded-lg text-gray-400"
                                     disabled
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Request Date
                                 </label>
                                 <input
                                     type="text"
                                     value={currentDate}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                                    className="w-full px-4 py-3 bg-dark-500 border border-gray-700 rounded-lg text-gray-400"
                                     disabled
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Maintenance Type
                                 </label>
                                 <div className="flex gap-4">
-                                    <label className="flex items-center">
+                                    <label className="flex items-center cursor-pointer">
                                         <input
                                             type="radio"
                                             name="type"
                                             value="CORRECTIVE"
                                             checked={formData.type === 'CORRECTIVE'}
                                             onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                                            className="mr-2"
+                                            className="mr-2 w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-2"
                                         />
-                                        <span>Corrective</span>
+                                        <span className="text-gray-300">Corrective</span>
                                     </label>
-                                    <label className="flex items-center">
+                                    <label className="flex items-center cursor-pointer">
                                         <input
                                             type="radio"
                                             name="type"
                                             value="PREVENTIVE"
                                             checked={formData.type === 'PREVENTIVE'}
                                             onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                                            className="mr-2"
+                                            className="mr-2 w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-2"
                                         />
-                                        <span>Preventive</span>
+                                        <span className="text-gray-300">Preventive</span>
                                     </label>
                                 </div>
                             </div>
@@ -381,7 +383,7 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                         {/* Right Column */}
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Team
                                 </label>
                                 <select
@@ -391,7 +393,7 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                                         maintenanceTeamId: e.target.value,
                                         assignedTechnicianId: '' // Clear technician when team changes
                                     }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                     required
                                 >
                                     <option value="">Select Team</option>
@@ -404,13 +406,13 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Technician
                                 </label>
                                 <select
                                     value={formData.assignedTechnicianId || ''}
                                     onChange={(e) => setFormData(prev => ({ ...prev, assignedTechnicianId: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={!formData.maintenanceTeamId}
                                 >
                                     <option value="">Select Technician</option>
@@ -427,7 +429,7 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
 
                             {formData.type === 'PREVENTIVE' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
                                         Scheduled Date
                                     </label>
                                     <div className="flex gap-2">
@@ -435,22 +437,22 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                                             type="date"
                                             value={formData.scheduledDate}
                                             onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="flex-1 px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                             required={formData.type === 'PREVENTIVE'}
                                         />
                                         <input
                                             type="time"
                                             value={formData.scheduledTime}
                                             onChange={(e) => setFormData(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white transition-all"
                                         />
                                     </div>
                                 </div>
                             )}
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Duration
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Duration (hours)
                                 </label>
                                 <input
                                     type="number"
@@ -458,41 +460,41 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                                     min="0"
                                     value={formData.durationHours}
                                     onChange={(e) => setFormData(prev => ({ ...prev, durationHours: e.target.value }))}
-                                    placeholder="00:00 hours"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g. 2.5"
+                                    className="w-full px-4 py-3 bg-dark-300 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white placeholder-gray-500 transition-all"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Priority
                                 </label>
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                     {['LOW', 'MEDIUM', 'HIGH'].map((priority) => (
                                         <button
                                             key={priority}
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, priority }))}
-                                            className={`w-8 h-8 border-2 rounded ${
+                                            className={`flex-1 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
                                                 formData.priority === priority
-                                                    ? 'border-blue-600 bg-blue-100'
-                                                    : 'border-gray-300'
+                                                    ? 'border-primary-500 bg-primary-500/20 text-primary-400'
+                                                    : 'border-gray-600 bg-dark-300 text-gray-400 hover:border-gray-500'
                                             }`}
                                         >
-                                            <span className="text-xs">{priority[0]}</span>
+                                            {priority}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
                                     Company
                                 </label>
                                 <input
                                     type="text"
                                     value={selectedEquipment?.company || selectedEquipment?.location || ''}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                                    className="w-full px-4 py-3 bg-dark-500 border border-gray-700 rounded-lg text-gray-400"
                                     disabled
                                 />
                             </div>
@@ -500,15 +502,15 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                     </div>
 
                     {/* Notes and Instructions Tabs */}
-                    <div className="border-t border-gray-200 pt-4">
+                    <div className="border-t border-gray-700 pt-6 mt-6">
                         <div className="flex gap-2 mb-4">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('notes')}
-                                className={`px-4 py-2 text-sm font-medium rounded-t-lg ${
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                                     activeTab === 'notes'
-                                        ? 'bg-white border-t border-l border-r border-gray-300 text-gray-900'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        ? 'bg-primary-500/20 border-2 border-primary-500/30 text-primary-400'
+                                        : 'bg-dark-300 border-2 border-gray-600 text-gray-400 hover:bg-dark-200'
                                 }`}
                             >
                                 Notes
@@ -516,16 +518,16 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('instructions')}
-                                className={`px-4 py-2 text-sm font-medium rounded-t-lg ${
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                                     activeTab === 'instructions'
-                                        ? 'bg-white border-t border-l border-r border-gray-300 text-gray-900'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        ? 'bg-primary-500/20 border-2 border-primary-500/30 text-primary-400'
+                                        : 'bg-dark-300 border-2 border-gray-600 text-gray-400 hover:bg-dark-200'
                                 }`}
                             >
                                 Instructions
                             </button>
                         </div>
-                        <div className="border border-gray-300 rounded-b-lg rounded-r-lg">
+                        <div className="border-2 border-gray-600 rounded-lg overflow-hidden">
                             <textarea
                                 value={activeTab === 'notes' ? formData.notes : formData.instructions}
                                 onChange={(e) => setFormData(prev => ({
@@ -533,7 +535,7 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                                     [activeTab === 'notes' ? 'notes' : 'instructions']: e.target.value
                                 }))}
                                 rows={6}
-                                className="w-full px-3 py-2 border-0 rounded-b-lg focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-3 bg-dark-300 text-white placeholder-gray-500 border-0 focus:ring-2 focus:ring-primary-500 resize-none"
                                 placeholder={activeTab === 'notes' ? 'Enter notes...' : 'Enter instructions...'}
                             />
                         </div>
@@ -543,14 +545,21 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess, initialData = null }) 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                            className="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-medium py-3 px-6 rounded-lg shadow-lg shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            {loading ? 'Creating...' : 'Create Request'}
+                            {loading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    Creating...
+                                </span>
+                            ) : (
+                                'Create Request'
+                            )}
                         </button>
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="flex-1 bg-dark-300 border-2 border-gray-600 text-gray-300 font-medium py-3 px-6 rounded-lg hover:bg-dark-200 hover:border-gray-500 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                         >
                             Cancel
                         </button>

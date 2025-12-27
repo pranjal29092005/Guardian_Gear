@@ -72,45 +72,45 @@ const EditRequestModal = ({ isOpen, onClose, request, onSuccess }) => {
     if (!isOpen || !request) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-dark-400 border border-gray-700 rounded-lg shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                <h2 className="text-xl font-bold text-white mb-4">
                     Edit Request Assignment
                 </h2>
 
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                        <span className="font-semibold">Request:</span> {request.subject}
+                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-gray-300">
+                        <span className="font-semibold text-white">Request:</span> {request.subject}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-400">
                         Equipment: {request.equipmentId?.name || 'N/A'}
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg">
                         {error}
                     </div>
                 )}
 
                 {loading ? (
-                    <div className="text-center py-12 text-gray-500">Loading...</div>
+                    <div className="text-center py-12 text-gray-400">Loading...</div>
                 ) : (
                     <div className="space-y-4">
                         {/* Team Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
                                 <TeamIcon className="w-4 h-4 inline mr-1" />
                                 Maintenance Team
                             </label>
                             <select
                                 value={selectedTeamId}
                                 onChange={(e) => handleTeamChange(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 bg-dark-300 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             >
-                                <option value="">Select Team</option>
+                                <option value="" className="bg-dark-400">Select Team</option>
                                 {teams.map((team) => (
-                                    <option key={team._id} value={team._id}>
+                                    <option key={team._id} value={team._id} className="bg-dark-400">
                                         {team.name}
                                     </option>
                                 ))}
@@ -119,24 +119,24 @@ const EditRequestModal = ({ isOpen, onClose, request, onSuccess }) => {
 
                         {/* Technician Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
                                 <UserIcon className="w-4 h-4 inline mr-1" />
                                 Assigned Technician
                             </label>
                             <select
                                 value={selectedTechnicianId}
                                 onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 bg-dark-300 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={!selectedTeamId}
                             >
-                                <option value="">No Technician Assigned</option>
+                                <option value="" className="bg-dark-400">No Technician Assigned</option>
                                 {filteredTechnicians.length === 0 ? (
-                                    <option value="" disabled>
+                                    <option value="" disabled className="bg-dark-400">
                                         {selectedTeamId ? 'No technicians in selected team' : 'Select a team first'}
                                     </option>
                                 ) : (
                                     filteredTechnicians.map((tech) => (
-                                        <option key={tech._id} value={tech._id}>
+                                        <option key={tech._id} value={tech._id} className="bg-dark-400">
                                             {tech.name} ({tech.email})
                                         </option>
                                     ))
@@ -150,31 +150,31 @@ const EditRequestModal = ({ isOpen, onClose, request, onSuccess }) => {
                         </div>
 
                         {/* Current Assignment Info */}
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-600">
-                                <span className="font-semibold">Current Team:</span>{' '}
+                        <div className="p-3 bg-dark-300 border border-gray-700 rounded-lg">
+                            <p className="text-xs text-gray-400">
+                                <span className="font-semibold text-gray-300">Current Team:</span>{' '}
                                 {request.maintenanceTeamId?.name || 'Not assigned'}
                             </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                                <span className="font-semibold">Current Technician:</span>{' '}
+                            <p className="text-xs text-gray-400 mt-1">
+                                <span className="font-semibold text-gray-300">Current Technician:</span>{' '}
                                 {request.assignedTechnicianId?.name || 'Not assigned'}
                             </p>
                         </div>
                     </div>
                 )}
 
-                <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 mt-4 border-t border-gray-700">
                     <button
                         onClick={onClose}
                         disabled={updating}
-                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="flex-1 bg-dark-300 border border-gray-600 text-gray-300 py-2 px-4 rounded-lg hover:bg-dark-200 hover:border-gray-500 transition-colors disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleUpdate}
                         disabled={updating || loading || !selectedTeamId}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {updating ? 'Updating...' : 'Update'}
                     </button>

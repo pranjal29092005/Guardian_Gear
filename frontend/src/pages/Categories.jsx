@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FolderOpen, Plus, Edit3, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { categoryAPI } from '../api/categories';
 import { useAuth } from '../contexts/AuthContext';
-import { CategoryIcon, AddIcon, EditIcon, DeleteIcon, SaveIcon } from '../components/Icons';
+import { Card, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
+import { LoadingScreen } from '../components/ui/Loading';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const Categories = () => {
     const { hasRole } = useAuth();
+    const isManager = hasRole(['MANAGER']);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [formData, setFormData] = useState({ name: '', description: '' });
-    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -23,6 +32,7 @@ const Categories = () => {
             setCategories(data);
         } catch (err) {
             console.error('Failed to fetch categories:', err);
+            toast.error('Failed to load categories');
         } finally {
             setLoading(false);
         }
@@ -30,38 +40,40 @@ const Categories = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setSubmitting(true);
 
         try {
             if (editingCategory) {
                 await categoryAPI.update(editingCategory._id, formData);
+                toast.success('Category updated successfully!');
             } else {
                 await categoryAPI.create(formData);
+                toast.success('Category created successfully!');
             }
-
             fetchCategories();
             handleCloseModal();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to save category');
+            toast.error(err.response?.data?.message || 'Failed to save category');
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this category?')) {
-            return;
-        }
+        if (!confirm('Are you sure you want to delete this category?')) return;
 
         try {
             await categoryAPI.delete(id);
+            toast.success('Category deleted successfully!');
             fetchCategories();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to delete category');
+            toast.error(err.response?.data?.message || 'Failed to delete category');
         }
     };
 
-    const handleEdit = (category) => {
+    const handleOpenModal = (category = null) => {
         setEditingCategory(category);
-        setFormData({ name: category.name, description: category.description || '' });
+        setFormData(category ? { name: category.name, description: category.description || '' } : { name: '', description: '' });
         setShowModal(true);
     };
 
@@ -69,158 +81,119 @@ const Categories = () => {
         setShowModal(false);
         setEditingCategory(null);
         setFormData({ name: '', description: '' });
-        setError('');
     };
 
-    const isManager = hasRole(['MANAGER']);
-
     if (loading) {
-        return <div className="text-center py-12">Loading...</div>;
+        return <LoadingScreen message="Loading categories..." />;
     }
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                    <CategoryIcon className="w-8 h-8 text-blue-600" />
-                    Categories
-                </h1>
-                {isManager && (
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                        <AddIcon className="w-5 h-5" />
-                        Add Category
-                    </button>
-                )}
-            </div>
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Description
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Equipment Count
-                            </th>
-                            {isManager && (
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {categories.map((category) => (
-                            <tr key={category._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <CategoryIcon className="w-5 h-5 text-blue-600" />
-                                        <span className="text-sm font-medium text-gray-900">{category.name}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="text-sm text-gray-600">{category.description || '-'}</span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="text-sm text-gray-900">{category.equipmentCount || 0}</span>
-                                </td>
-                                {isManager && (
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button
-                                            onClick={() => handleEdit(category)}
-                                            className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1 mr-3"
-                                        >
-                                            <EditIcon className="w-4 h-4" />
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(category._id)}
-                                            className="text-red-600 hover:text-red-900 inline-flex items-center gap-1"
-                                        >
-                                            <DeleteIcon className="w-4 h-4" />
-                                            Delete
-                                        </button>
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                {categories.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        No categories found. {isManager && 'Click "Add Category" to create one.'}
+        <div className="space-y-6">
+            {/* Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 shadow-glow">
+                        <FolderOpen className="w-6 h-6 text-white" />
                     </div>
-                )}
-            </div>
-
-            {/* Create/Edit Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">
-                            {editingCategory ? 'Edit Category' : 'Add Category'}
-                        </h2>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Name *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="submit"
-                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    <SaveIcon className="w-5 h-5" />
-                                    {editingCategory ? 'Update' : 'Create'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleCloseModal}
-                                    className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
+                    <div>
+                        <h1 className="text-4xl font-bold text-white">Equipment Categories</h1>
+                        <p className="text-gray-400 mt-1">Organize equipment by categories</p>
                     </div>
                 </div>
+                {isManager && (
+                    <Button onClick={() => handleOpenModal()} icon={Plus} size="lg">
+                        Create Category
+                    </Button>
+                )}
+            </motion.div>
+
+            {/* Categories Grid */}
+            {categories.length === 0 ? (
+                <EmptyState
+                    icon={FolderOpen}
+                    title="No categories found"
+                    description="Get started by creating your first equipment category"
+                    action={isManager ? { label: 'Create Category', onClick: () => handleOpenModal() } : undefined}
+                />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categories.map((category, index) => (
+                        <motion.div
+                            key={category._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                        >
+                            <Card hoverable>
+                                <CardContent className="p-6">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="p-3 rounded-xl bg-orange-500/20">
+                                            <FolderOpen className="w-6 h-6 text-orange-400" />
+                                        </div>
+                                        {isManager && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleOpenModal(category)}
+                                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                                >
+                                                    <Edit3 className="w-4 h-4 text-blue-400" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(category._id)}
+                                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-400" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-white mb-2">{category.name}</h3>
+                                    <p className="text-gray-400 text-sm line-clamp-2">
+                                        {category.description || 'No description provided'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
             )}
+
+            {/* Create/Edit Modal */}
+            <Modal
+                isOpen={showModal}
+                onClose={handleCloseModal}
+                title={editingCategory ? 'Edit Category' : 'Create New Category'}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input
+                        label="Category Name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter category name"
+                        required
+                    />
+                    <Input
+                        label="Description"
+                        as="textarea"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Enter category description (optional)"
+                        rows={3}
+                    />
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button type="button" variant="ghost" onClick={handleCloseModal}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" loading={submitting}>
+                            {editingCategory ? 'Update' : 'Create'} Category
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

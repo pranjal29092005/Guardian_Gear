@@ -6,6 +6,11 @@ export const teamAPI = {
         return response.data.data;
     },
 
+    getById: async (id) => {
+        const response = await apiClient.get(`/teams/${id}`);
+        return response.data.data;
+    },
+
     create: async (data) => {
         const response = await apiClient.post('/teams', data);
         return response.data.data;

@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Building2, Plus, Edit3, Trash2, Activity } from 'lucide-react';
+import { toast } from 'sonner';
 import { workcenterAPI } from '../api/workcenters';
 import { useAuth } from '../contexts/AuthContext';
-import { AddIcon, EditIcon, DeleteIcon, SaveIcon } from '../components/Icons';
+import { Card, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
+import { LoadingScreen } from '../components/ui/Loading';
+import { EmptyState } from '../components/ui/EmptyState';
+import { StatusBadge } from '../components/ui/Badge';
 
 const WorkCenters = () => {
     const { hasRole } = useAuth();
@@ -9,19 +18,17 @@ const WorkCenters = () => {
     const [workcenters, setWorkcenters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [editMode, setEditMode] = useState(false);
     const [selectedWorkcenter, setSelectedWorkcenter] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
         tag: '',
-        alternativeWorkcenters: [],
         costPerHour: 0,
         capacityTimeEfficiency: 100,
         oeeTarget: 85,
         status: 'ACTIVE'
     });
-    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         fetchWorkcenters();
@@ -34,389 +41,222 @@ const WorkCenters = () => {
             setWorkcenters(data);
         } catch (err) {
             console.error('Failed to fetch work centers:', err);
+            toast.error('Failed to load work centers');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreate = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setSubmitting(true);
 
         try {
-            await workcenterAPI.create(formData);
+            if (selectedWorkcenter) {
+                await workcenterAPI.update(selectedWorkcenter._id, formData);
+                toast.success('Work center updated successfully!');
+            } else {
+                await workcenterAPI.create(formData);
+                toast.success('Work center created successfully!');
+            }
             fetchWorkcenters();
             handleCloseModal();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create work center');
-        }
-    };
-
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            await workcenterAPI.update(selectedWorkcenter._id, formData);
-            fetchWorkcenters();
-            handleCloseModal();
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update work center');
+            toast.error(err.response?.data?.message || 'Failed to save work center');
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this work center?')) {
-            return;
-        }
+        if (!confirm('Are you sure you want to delete this work center?')) return;
 
         try {
             await workcenterAPI.delete(id);
+            toast.success('Work center deleted successfully!');
             fetchWorkcenters();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to delete work center');
+            toast.error(err.response?.data?.message || 'Failed to delete work center');
         }
     };
 
-    const handleOpenCreateModal = () => {
-        setEditMode(false);
-        setSelectedWorkcenter(null);
-        setFormData({
+    const handleOpenModal = (workcenter = null) => {
+        setSelectedWorkcenter(workcenter);
+        setFormData(workcenter || {
             name: '',
             code: '',
             tag: '',
-            alternativeWorkcenters: [],
             costPerHour: 0,
             capacityTimeEfficiency: 100,
             oeeTarget: 85,
             status: 'ACTIVE'
         });
-        setError('');
-        setShowModal(true);
-    };
-
-    const handleOpenEditModal = (workcenter) => {
-        setEditMode(true);
-        setSelectedWorkcenter(workcenter);
-        setFormData({
-            name: workcenter.name,
-            code: workcenter.code,
-            tag: workcenter.tag || '',
-            alternativeWorkcenters: workcenter.alternativeWorkcenters?.map(wc => wc._id) || [],
-            costPerHour: workcenter.costPerHour || 0,
-            capacityTimeEfficiency: workcenter.capacityTimeEfficiency || 100,
-            oeeTarget: workcenter.oeeTarget || 85,
-            status: workcenter.status
-        });
-        setError('');
         setShowModal(true);
     };
 
     const handleCloseModal = () => {
         setShowModal(false);
-        setEditMode(false);
         setSelectedWorkcenter(null);
-        setError('');
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleAlternativeWCChange = (e) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-        setFormData(prev => ({
-            ...prev,
-            alternativeWorkcenters: selectedOptions
-        }));
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'ACTIVE': return 'bg-green-100 text-green-800';
-            case 'MAINTENANCE': return 'bg-red-100 text-red-800';
-            case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
     };
 
     if (loading) {
-        return <div className="text-center py-12">Loading...</div>;
+        return <LoadingScreen message="Loading work centers..." />;
     }
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Work Centers</h1>
-                {isManager && (
-                    <button
-                        onClick={handleOpenCreateModal}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                        <AddIcon className="w-5 h-5" />
-                        Add Work Center
-                    </button>
-                )}
-            </div>
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Code
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Tag
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Cost/Hour
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Capacity %
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                OEE Target
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            {isManager && (
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {workcenters.map((wc) => (
-                            <tr key={wc._id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {wc.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {wc.code}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {wc.tag || '-'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    ${wc.costPerHour}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {wc.capacityTimeEfficiency}%
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {wc.oeeTarget}%
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(wc.status)}`}>
-                                        {wc.status}
-                                    </span>
-                                </td>
-                                {isManager && (
-                                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => handleOpenEditModal(wc)}
-                                                className="text-blue-600 hover:text-blue-900 p-1"
-                                                title="Edit"
-                                            >
-                                                <EditIcon className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(wc._id)}
-                                                className="text-red-600 hover:text-red-900 p-1"
-                                                title="Delete"
-                                            >
-                                                <DeleteIcon className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                {workcenters.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        No work centers found. {isManager && 'Click "Add Work Center" to create one.'}
+        <div className="space-y-6">
+            {/* Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 shadow-glow">
+                        <Building2 className="w-6 h-6 text-white" />
                     </div>
-                )}
-            </div>
-
-            {/* Create/Edit Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">
-                            {editMode ? 'Edit Work Center' : 'Create Work Center'}
-                        </h2>
-
-                        {error && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-                                {error}
-                            </div>
-                        )}
-
-                        <form onSubmit={editMode ? handleUpdate : handleCreate}>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Code *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="code"
-                                        value={formData.code}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Tag
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="tag"
-                                        value={formData.tag}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Cost per Hour
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="costPerHour"
-                                        value={formData.costPerHour}
-                                        onChange={handleChange}
-                                        min="0"
-                                        step="0.01"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Capacity Time Efficiency (%)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="capacityTimeEfficiency"
-                                        value={formData.capacityTimeEfficiency}
-                                        onChange={handleChange}
-                                        min="0"
-                                        max="100"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        OEE Target (%)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="oeeTarget"
-                                        value={formData.oeeTarget}
-                                        onChange={handleChange}
-                                        min="0"
-                                        max="100"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Status
-                                    </label>
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="ACTIVE">ACTIVE</option>
-                                        <option value="INACTIVE">INACTIVE</option>
-                                        <option value="MAINTENANCE">MAINTENANCE</option>
-                                    </select>
-                                </div>
-
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Alternative Work Centers
-                                    </label>
-                                    <select
-                                        multiple
-                                        name="alternativeWorkcenters"
-                                        value={formData.alternativeWorkcenters}
-                                        onChange={handleAlternativeWCChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        size="4"
-                                    >
-                                        {workcenters
-                                            .filter(wc => !selectedWorkcenter || wc._id !== selectedWorkcenter._id)
-                                            .map(wc => (
-                                                <option key={wc._id} value={wc._id}>
-                                                    {wc.name} ({wc.code})
-                                                </option>
-                                            ))}
-                                    </select>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Hold Ctrl/Cmd to select multiple
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    onClick={handleCloseModal}
-                                    className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
-                                >
-                                    <SaveIcon className="w-5 h-5" />
-                                    {editMode ? 'Update' : 'Create'}
-                                </button>
-                            </div>
-                        </form>
+                    <div>
+                        <h1 className="text-4xl font-bold text-white">Work Centers</h1>
+                        <p className="text-gray-400 mt-1">Manage facility work centers</p>
                     </div>
                 </div>
+                {isManager && (
+                    <Button onClick={() => handleOpenModal()} icon={Plus} size="lg">
+                        Create Work Center
+                    </Button>
+                )}
+            </motion.div>
+
+            {/* Work Centers Grid */}
+            {workcenters.length === 0 ? (
+                <EmptyState
+                    icon={Building2}
+                    title="No work centers found"
+                    description="Get started by creating your first work center"
+                    action={isManager ? { label: 'Create Work Center', onClick: () => handleOpenModal() } : undefined}
+                />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {workcenters.map((wc, index) => (
+                        <motion.div
+                            key={wc._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                        >
+                            <Card hoverable>
+                                <CardContent className="p-6">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-3 rounded-xl bg-purple-500/20">
+                                                <Building2 className="w-6 h-6 text-purple-400" />
+                                            </div>
+                                            <StatusBadge status={wc.status} size="sm" />
+                                        </div>
+                                        {isManager && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleOpenModal(wc)}
+                                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                                >
+                                                    <Edit3 className="w-4 h-4 text-blue-400" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(wc._id)}
+                                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-400" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-white mb-1">{wc.name}</h3>
+                                    <p className="text-sm text-gray-400 mb-4">Code: {wc.code}</p>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400">Cost/Hour:</span>
+                                            <span className="text-white font-medium">${wc.costPerHour}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400">Efficiency:</span>
+                                            <span className="text-white font-medium">{wc.capacityTimeEfficiency}%</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400">OEE Target:</span>
+                                            <span className="text-white font-medium">{wc.oeeTarget}%</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
             )}
+
+            {/* Create/Edit Modal */}
+            <Modal
+                isOpen={showModal}
+                onClose={handleCloseModal}
+                title={selectedWorkcenter ? 'Edit Work Center' : 'Create New Work Center'}
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input
+                        label="Work Center Name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter name"
+                        required
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input
+                            label="Code"
+                            value={formData.code}
+                            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                            placeholder="WC-001"
+                            required
+                        />
+                        <Input
+                            label="Tag"
+                            value={formData.tag}
+                            onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+                            placeholder="Optional tag"
+                        />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        <Input
+                            label="Cost/Hour ($)"
+                            type="number"
+                            value={formData.costPerHour}
+                            onChange={(e) => setFormData({ ...formData, costPerHour: Number(e.target.value) })}
+                            min="0"
+                        />
+                        <Input
+                            label="Efficiency (%)"
+                            type="number"
+                            value={formData.capacityTimeEfficiency}
+                            onChange={(e) => setFormData({ ...formData, capacityTimeEfficiency: Number(e.target.value) })}
+                            min="0"
+                            max="100"
+                        />
+                        <Input
+                            label="OEE Target (%)"
+                            type="number"
+                            value={formData.oeeTarget}
+                            onChange={(e) => setFormData({ ...formData, oeeTarget: Number(e.target.value) })}
+                            min="0"
+                            max="100"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button type="button" variant="ghost" onClick={handleCloseModal}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" loading={submitting}>
+                            {selectedWorkcenter ? 'Update' : 'Create'} Work Center
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

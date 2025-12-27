@@ -55,27 +55,27 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
 
     const getStatusColor = (stage) => {
         switch (stage) {
-            case 'NEW': return 'bg-blue-100 text-blue-800';
-            case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-800';
-            case 'REPAIRED': return 'bg-green-100 text-green-800';
-            case 'SCRAP': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'NEW': return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+            case 'IN_PROGRESS': return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+            case 'REPAIRED': return 'bg-green-500/20 text-green-400 border border-green-500/30';
+            case 'SCRAP': return 'bg-red-500/20 text-red-400 border border-red-500/30';
+            default: return 'bg-gray-500/20 text-gray-400 border border-gray-500/30';
         }
     };
 
     return (
         <>
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-dark-400 border border-gray-700 rounded-lg shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                     <div className="flex items-start justify-between mb-4">
-                        <h2 className="text-xl font-bold text-gray-900">Request Details</h2>
+                        <h2 className="text-xl font-bold text-white">Request Details</h2>
                         <span className={`px-3 py-1 text-sm font-semibold rounded ${getStatusColor(request.stage)}`}>
                             {request.stage}
                         </span>
                     </div>
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg">
                             {error}
                         </div>
                     )}
@@ -83,26 +83,26 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                     <div className="space-y-4">
                         {/* Subject & Description */}
                         <div>
-                            <h3 className="font-semibold text-gray-900 text-lg">{request.subject}</h3>
+                            <h3 className="font-semibold text-white text-lg">{request.subject}</h3>
                             {request.description && (
-                                <p className="text-sm text-gray-600 mt-1">{request.description}</p>
+                                <p className="text-sm text-gray-400 mt-1">{request.description}</p>
                             )}
                         </div>
 
                         {/* Equipment Info */}
                         {request.equipmentId && (
-                            <div className="p-3 bg-gray-50 rounded-lg">
+                            <div className="p-3 bg-dark-300 border border-gray-700 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <EquipmentIcon className="w-5 h-5 text-gray-600" />
-                                    <span className="font-medium text-gray-900">Equipment</span>
+                                    <EquipmentIcon className="w-5 h-5 text-gray-400" />
+                                    <span className="font-medium text-white">Equipment</span>
                                 </div>
-                                <p className="text-sm text-gray-700">{request.equipmentId.name}</p>
+                                <p className="text-sm text-gray-300">{request.equipmentId.name}</p>
                                 <p className="text-xs text-gray-500">
                                     Serial: {request.equipmentId.serialNumber} | Category: {request.equipmentId.category}
                                 </p>
                                 {request.equipmentId.status && (
                                     <p className="text-xs text-gray-500 mt-1">
-                                        Status: <span className="font-medium">{request.equipmentId.status}</span>
+                                        Status: <span className="font-medium text-gray-400">{request.equipmentId.status}</span>
                                     </p>
                                 )}
                             </div>
@@ -112,13 +112,13 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Type</label>
-                                <p className="text-gray-900">{request.type}</p>
+                                <p className="text-white">{request.type}</p>
                             </div>
 
                             {request.scheduledDate && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-500">Scheduled</label>
-                                    <p className="text-gray-900 flex items-center gap-1">
+                                    <p className="text-white flex items-center gap-1">
                                         <CalendarIcon className="w-4 h-4" />
                                         {new Date(request.scheduledDate).toLocaleDateString()}
                                     </p>
@@ -128,7 +128,7 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                             {request.maintenanceTeamId && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-500">Team</label>
-                                    <p className="text-gray-900 flex items-center gap-1">
+                                    <p className="text-white flex items-center gap-1">
                                         <TeamIcon className="w-4 h-4" />
                                         {request.maintenanceTeamId.name}
                                     </p>
@@ -138,7 +138,7 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                             {request.assignedTechnicianId && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-500">Assigned To</label>
-                                    <p className="text-gray-900 flex items-center gap-1">
+                                    <p className="text-white flex items-center gap-1">
                                         <UserIcon className="w-4 h-4" />
                                         {request.assignedTechnicianId.name}
                                     </p>
@@ -147,14 +147,14 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-500">Created</label>
-                                <p className="text-gray-900">
+                                <p className="text-white">
                                     {new Date(request.createdAt).toLocaleDateString()}
                                 </p>
                             </div>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="pt-4 mt-4 border-t border-gray-200">
+                        <div className="pt-4 mt-4 border-t border-gray-700">
                             <div className="flex flex-wrap gap-2">
                                 {canAssign && !request.assignedTechnicianId && (
                                     <button
@@ -164,7 +164,7 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                                             setShowAssignModal(true);
                                         }}
                                         disabled={updating}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Assign Technician
                                     </button>
@@ -174,7 +174,7 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                                     <button
                                         onClick={(e) => handleStatusUpdate('IN_PROGRESS', e)}
                                         disabled={updating}
-                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {updating ? 'Starting...' : 'Start Work'}
                                     </button>
@@ -185,14 +185,14 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                                         <button
                                             onClick={(e) => handleStatusUpdate('REPAIRED', e)}
                                             disabled={updating}
-                                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {updating ? 'Updating...' : 'Mark as Repaired'}
                                         </button>
                                         <button
                                             onClick={(e) => handleStatusUpdate('SCRAP', e)}
                                             disabled={updating}
-                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                            className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {updating ? 'Updating...' : 'Mark as Scrap'}
                                         </button>
@@ -202,10 +202,10 @@ const RequestDetailModal = ({ isOpen, onClose, request, onSuccess }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200">
+                    <div className="flex gap-3 pt-4 mt-4 border-t border-gray-700">
                         <button
                             onClick={onClose}
-                            className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="flex-1 bg-dark-300 border border-gray-600 text-gray-300 py-2 px-4 rounded-lg hover:bg-dark-200 hover:border-gray-500 transition-colors"
                         >
                             Close
                         </button>

@@ -1,7 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+    ArrowLeft, 
+    Package, 
+    Calendar, 
+    Shield, 
+    MapPin, 
+    User, 
+    Users, 
+    Hash,
+    Grid3x3,
+    Building,
+    ClipboardList,
+    FileText
+} from 'lucide-react';
 import { equipmentAPI } from '../api/equipment';
 import MaintenanceHistory from '../components/MaintenanceHistory';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { StatusBadge, CountBadge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { LoadingScreen } from '../components/ui/Loading';
+import { cn } from '../utils/cn';
 
 const EquipmentDetail = () => {
     const { id } = useParams();
@@ -26,131 +46,216 @@ const EquipmentDetail = () => {
     };
 
     if (loading) {
-        return <div className="text-center py-12">Loading...</div>;
+        return <LoadingScreen message="Loading equipment details..." />;
     }
 
     if (!data) {
-        return <div className="text-center py-12">Equipment not found</div>;
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <Package className="w-16 h-16 text-gray-600 mb-4" />
+                <h2 className="text-2xl font-semibold text-white mb-2">Equipment not found</h2>
+                <Button onClick={() => navigate('/equipment')} variant="outline">
+                    Back to Equipment List
+                </Button>
+            </div>
+        );
     }
 
     const { equipment, openRequestCount } = data;
 
+    const detailFields = [
+        { icon: Hash, label: 'Serial Number', value: equipment.serialNumber, mono: true },
+        { icon: Grid3x3, label: 'Category', value: equipment.category },
+        { icon: Building, label: 'Department', value: equipment.department },
+        { icon: MapPin, label: 'Location', value: equipment.location },
+        { icon: User, label: 'Owner', value: equipment.ownerEmployeeName || 'Not assigned' },
+        { icon: Users, label: 'Maintenance Team', value: equipment.defaultMaintenanceTeamId?.name || 'Not assigned' },
+        { icon: Calendar, label: 'Purchase Date', value: new Date(equipment.purchaseDate).toLocaleDateString() },
+        { icon: Shield, label: 'Warranty Until', value: equipment.warrantyUntil ? new Date(equipment.warrantyUntil).toLocaleDateString() : 'N/A' },
+    ];
+
     return (
-        <div>
-            <button
-                onClick={() => navigate('/equipment')}
-                className="mb-4 text-blue-600 hover:text-blue-700 flex items-center"
+        <div className="space-y-6">
+            {/* Back Button */}
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
             >
-                ← Back to Equipment List
-            </button>
-
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">{equipment.name}</h1>
-                    <span
-                        className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                            equipment.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                            equipment.status === 'DAMAGED' ? 'bg-orange-100 text-orange-800' :
-                            equipment.status === 'UNDER_MAINTENANCE' ? 'bg-yellow-100 text-yellow-800' :
-                            equipment.status === 'SCRAP' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                        }`}
-                    >
-                        {equipment.status}
-                    </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Serial Number</h3>
-                        <p className="text-lg text-gray-900">{equipment.serialNumber}</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Category</h3>
-                        <p className="text-lg text-gray-900">{equipment.category}</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Department</h3>
-                        <p className="text-lg text-gray-900">{equipment.department}</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Location</h3>
-                        <p className="text-lg text-gray-900">{equipment.location}</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Owner</h3>
-                        <p className="text-lg text-gray-900">{equipment.ownerEmployeeName || '-'}</p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Maintenance Team</h3>
-                        <p className="text-lg text-gray-900">
-                            {equipment.defaultMaintenanceTeamId?.name || 'Not assigned'}
-                        </p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Purchase Date</h3>
-                        <p className="text-lg text-gray-900">
-                            {new Date(equipment.purchaseDate).toLocaleDateString()}
-                        </p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500 mb-1">Warranty Until</h3>
-                        <p className="text-lg text-gray-900">
-                            {equipment.warrantyUntil
-                                ? new Date(equipment.warrantyUntil).toLocaleDateString()
-                                : 'N/A'}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Smart Maintenance Button */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Maintenance Requests</h2>
-
-                <button
-                    onClick={() => navigate(`/kanban?equipmentId=${id}`)}
-                    className="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                <Button
+                    variant="ghost"
+                    icon={ArrowLeft}
+                    onClick={() => navigate('/equipment')}
                 >
-                    <span>📋</span>
-                    <span>Maintenance ({openRequestCount})</span>
-                </button>
+                    Back to Equipment List
+                </Button>
+            </motion.div>
 
-                <p className="mt-2 text-sm text-gray-600">
-                    {openRequestCount === 0
-                        ? 'No open maintenance requests for this equipment'
-                        : `${openRequestCount} open maintenance request${openRequestCount > 1 ? 's' : ''}`}
-                </p>
-            </div>
-
-            {/* Notes Section */}
-            {equipment.notes && equipment.notes.length > 0 && (
-                <div className="bg-white rounded-lg shadow p-6 mt-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Audit Notes</h2>
-                    <div className="space-y-3">
-                        {equipment.notes.map((note, index) => (
-                            <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                                <p className="text-sm text-gray-900">{note.text}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {new Date(note.createdAt).toLocaleString()}
-                                </p>
+            {/* Equipment Header Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+            >
+                <Card variant="gradient" glow>
+                    <CardContent className="p-8">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                            {/* Icon and Title */}
+                            <div className="flex items-start gap-4">
+                                <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500 to-secondary-500 shadow-glow">
+                                    <Package className="w-10 h-10 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-4xl font-bold text-white mb-2">
+                                        {equipment.name}
+                                    </h1>
+                                    <p className="text-gray-400">
+                                        Equipment Details and Maintenance History
+                                    </p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
+                            
+                            {/* Status Badge */}
+                            <div>
+                                <StatusBadge status={equipment.status} size="lg" pulse />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Details Grid */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Equipment Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {detailFields.map((field, index) => (
+                                <motion.div
+                                    key={field.label}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 + index * 0.05 }}
+                                    className="flex items-start gap-3 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="p-2 rounded-lg bg-primary-500/20">
+                                        <field.icon className="w-5 h-5 text-primary-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-medium text-gray-400 mb-1">
+                                            {field.label}
+                                        </h3>
+                                        <p className={cn(
+                                            "text-base text-white truncate",
+                                            field.mono && "font-mono"
+                                        )}>
+                                            {field.value}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Maintenance Requests Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <Card>
+                    <CardContent className="p-8">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-xl bg-secondary-500/20">
+                                    <ClipboardList className="w-8 h-8 text-secondary-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-semibold text-white mb-2">
+                                        Maintenance Requests
+                                    </h2>
+                                    <p className="text-gray-400">
+                                        {openRequestCount === 0
+                                            ? 'No open maintenance requests for this equipment'
+                                            : `${openRequestCount} open maintenance request${openRequestCount > 1 ? 's' : ''}`}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <Button
+                                    onClick={() => navigate(`/kanban?equipmentId=${id}`)}
+                                    size="lg"
+                                    icon={ClipboardList}
+                                >
+                                    View in Kanban
+                                </Button>
+                                {openRequestCount > 0 && (
+                                    <CountBadge count={openRequestCount} variant="danger" />
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Audit Notes */}
+            {equipment.notes && equipment.notes.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5" />
+                                    Audit Notes
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {equipment.notes.map((note, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.6 + index * 0.1 }}
+                                        className="border-l-4 border-primary-500 pl-4 py-3 bg-white/5 rounded-r-xl"
+                                    >
+                                        <p className="text-gray-100">{note.text}</p>
+                                        <p className="text-sm text-gray-400 mt-2">
+                                            {new Date(note.createdAt).toLocaleString()}
+                                        </p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             )}
 
             {/* Maintenance History Timeline */}
-            <div className="bg-white rounded-lg shadow p-6 mt-6">
-                <MaintenanceHistory equipmentId={id} />
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+            >
+                <Card>
+                    <CardContent className="p-6">
+                        <MaintenanceHistory equipmentId={id} />
+                    </CardContent>
+                </Card>
+            </motion.div>
         </div>
     );
 };
